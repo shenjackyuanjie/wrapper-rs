@@ -17,6 +17,9 @@ fn main() {
         return;
     }
     let config = config.unwrap();
+    // 输出相关信息
+    println!("call {}", VERSION);
+    println!("config: {}", config);
     if config.show_console {
         win::show_window();
     } else {

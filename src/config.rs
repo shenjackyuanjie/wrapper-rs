@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 pub const HELP_MESSAGE: &str = r#"call [options] [--] [arguments]
 Options:
     --hide      Hide console window (default)
@@ -10,6 +12,7 @@ Options:
     --help      Print this help message
 "#;
 
+#[derive(Clone)]
 pub struct Config {
     pub show_console: bool,
     pub chdir: Option<String>,
@@ -17,6 +20,21 @@ pub struct Config {
     pub dir: Option<String>,
     pub config: Option<String>,
     pub bin_arg: String,
+}
+
+impl Display for Config {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut s = String::new();
+        s.push_str("Config {\n");
+        s.push_str(&format!("    show_console: {}\n", self.show_console));
+        s.push_str(&format!("    chdir: {:?}\n", self.chdir));
+        s.push_str(&format!("    bin: {:?}\n", self.bin));
+        s.push_str(&format!("    dir: {:?}\n", self.dir));
+        s.push_str(&format!("    config: {:?}\n", self.config));
+        s.push_str(&format!("    bin_arg: {:?}\n", self.bin_arg));
+        s.push_str("}");
+        write!(f, "{}", s)
+    }
 }
 
 impl Config {

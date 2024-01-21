@@ -1,10 +1,3 @@
+pub fn hide_window() {}
 
-
-pub fn hide_window () {
-
-}
-
-pub fn show_window () {
-    
-}
-
+pub fn show_window() {}
