@@ -46,6 +46,7 @@ impl Config {
         let args: Vec<String> = std::env::args().collect();
         // 先检查有没有 --help
         if args.contains(&"--help".to_string()) {
+            println!("v {}", crate::VERSION);
             println!("{}", HELP_MESSAGE);
             return None;
         }
