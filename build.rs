@@ -12,7 +12,7 @@ fn main() {
             .set("CompanyName", "TSW (shenjack's workshop)")
             .set("Comments", "一个简单的包装器")
             .set("InternalName", "caller.exe")
-            .set("FileVersion", "0.2.0.0")
+            .set("ProductVersion", "1.0.0.0")
             .set_language(winapi::um::winnt::MAKELANGID(
                 winapi::um::winnt::LANG_CHINESE_SIMPLIFIED,
                 winapi::um::winnt::SUBLANG_CHINESE_SIMPLIFIED,
