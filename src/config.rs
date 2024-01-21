@@ -2,20 +2,55 @@ use std::fmt::Display;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-pub const HELP_MESSAGE: &str = r#"call [options] [--] [arguments]
+pub const HELP_MESSAGE_EN: &str = r#"call [options] [--] [arguments]
 Options:
     --hide      Hide console window (default)
     --show      Show console window
-    --chdir     Change working directory to lib (default)
     --chdir=xxx Change working directory to xxx
     --bin=xxx   Specify executable file
     --config=xxx Specify configuration file
-    --help      Print this help message
+    --help      Print this help message(based on system language)
+    --help-zh   Print this help message(but in Chinese)
+    --help-en   Print this help message
 Defaults:
     hide console
     chdir ./lib
-    run ./main   
+    run ./main
 "#;
+
+pub const HELP_MESSAGE_ZH: &str = r#"call [选项] [--] [参数]
+选项:
+    --hide      隐藏控制台窗口 (默认)
+    --show      显示控制台窗口
+    --chdir=xxx 切换工作目录到 xxx
+    --bin=xxx   指定可执行文件
+    --config=xxx 指定配置文件
+    --help      输出这一堆东西(根据系统语言)
+    --help-zh   输出这一堆东西
+    --help-en   输出这一堆东西(但是英文)
+默认:
+    隐藏控制台
+    切换工作目录到 ./lib
+    运行 ./main
+"#;
+
+pub fn show_help() {
+    println!("version: {}", crate::VERSION);
+    match std::env::var("LANG") {
+        Ok(lang) => {
+            println!("{}", lang);
+            if lang.contains("en") {
+                println!("{}", HELP_MESSAGE_EN);
+            } else {
+                println!("{}", HELP_MESSAGE_ZH);
+            }
+        }
+        Err(_) => {
+            println!("{}", HELP_MESSAGE_ZH);
+        }
+        
+    }
+}
 
 #[derive(Clone)]
 pub struct Config {
@@ -96,16 +131,29 @@ impl Config {
                 continue;
             }
             let mut iter = line.splitn(2, "=");
-            let key = iter.next().unwrap();
-            let value = iter.next().unwrap();
-            if key == "show_console" {
-                show_console = value == "true";
-            } else if key == "chdir" {
-                chdir = Some(value.to_string());
-            } else if key == "bin" {
-                bin = Some(value.to_string());
-            } else if key == "arg" {
-                arg = Some(value.to_string());
+            let key = iter.next().unwrap_or("").trim();
+            let value = iter.next().unwrap_or("").trim();
+            match key {
+                "show_console" => {
+                    show_console = value == "true";
+                }
+                "chdir" => {
+                    chdir = Some(value.to_string());
+                }
+                "bin" => {
+                    bin = Some(value.to_string());
+                }
+                "arg" => {
+                    arg = Some(value.to_string());
+                }
+                "" => continue,
+                _ => {
+                    // 警告一下
+                    println!("Warning: unknown config key: {}", key);
+                    if !value.is_empty() {
+                        print!("value: {}", value)
+                    }
+                }
             }
         }
         // 处理一下 bin
@@ -131,8 +179,7 @@ impl Config {
         let args: Vec<String> = std::env::args().collect();
         // 先检查有没有 --help
         if args.contains(&"--help".to_string()) {
-            println!("v {}", crate::VERSION);
-            println!("{}", HELP_MESSAGE);
+            show_help();
             return None;
         }
 
