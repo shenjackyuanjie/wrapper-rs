@@ -18,4 +18,7 @@ fn main() {
     // 输出相关信息
     println!("call {}", VERSION);
     println!("config: {}", config);
+    // 运行
+    #[cfg(windows)]
+    win::run(&config);
 }

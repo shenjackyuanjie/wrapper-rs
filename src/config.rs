@@ -18,7 +18,7 @@ pub struct Config {
     pub chdir: Option<PathBuf>,
     pub bin: PathBuf,
     pub config: Option<String>,
-    pub bin_arg: String,
+    pub bin_arg: Vec<String>,
 }
 
 impl Display for Config {
@@ -42,7 +42,6 @@ impl Config {
         let mut bin: Option<String> = None;
         let dir: Option<String> = None;
         let mut config: Option<String> = None;
-        let mut bin_arg = "".to_string();
         // -- 表示后面的参数都是可执行文件的参数
         let args: Vec<String> = std::env::args().collect();
         // 先检查有没有 --help
@@ -52,14 +51,11 @@ impl Config {
         }
 
         let index = args.iter().position(|x| x == "--");
+        let bin_arg: Vec<String>;
         if index.is_some() {
-            // 把后面的所有函数拼接一下, 作为可执行文件的参数
-            for i in index.unwrap() + 1..args.len() {
-                bin_arg.push_str(&args[i]);
-                if i != args.len() - 1 {
-                    bin_arg.push(' ');
-                }
-            }
+            bin_arg = args[index.unwrap() + 1..].to_vec();
+        } else {
+            bin_arg = Vec::new();
         }
         // 先尝试获取指定的控制台参数
         // --hide 表示隐藏控制台
