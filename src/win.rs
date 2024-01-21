@@ -8,7 +8,6 @@ fn is_launched_from_console() -> bool {
         if console_window.is_null() {
             return false;
         }
-
         let mut console_process_id: u32 = 0;
         winuser::GetWindowThreadProcessId(console_window, &mut console_process_id);
 
@@ -58,12 +57,13 @@ pub fn call_bin(config: &Config, started_from_console: bool) {
     } else {
         println!("hide_window");
         // 调用可执行文件
+        // pub const CREATE_NO_WINDOW: DWORD = 0x08000000;
         let mut child = Command::new(&config.bin)
             .args(&config.bin_arg)
             .stdin(std::process::Stdio::inherit())
             .stdout(std::process::Stdio::inherit())
             .stderr(std::process::Stdio::inherit())
-            .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
+            .creation_flags(0x08000000_u32)
             .spawn()
             .expect("执行失败");
         free_console();
@@ -81,7 +81,6 @@ pub fn run(config: &Config) {
     }
     // 检测一下是否是从控制台启动的
     let started_from_console = is_launched_from_console();
-    // std::thread::sleep(std::time::Duration::from_secs(1));
     // 调用可执行文件
     call_bin(&config, started_from_console);
 }
