@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::path::PathBuf;
 
 pub const HELP_MESSAGE: &str = r#"call [options] [--] [arguments]
 Options:
@@ -6,7 +7,6 @@ Options:
     --show      Show console window
     --chdir     Change working directory to lib (default)
     --chdir=xxx Change working directory to xxx
-    --dir=xxx   Working directory is xxx
     --bin=xxx   Specify executable file
     --config=xxx Specify configuration file
     --help      Print this help message
@@ -15,9 +15,8 @@ Options:
 #[derive(Clone)]
 pub struct Config {
     pub show_console: bool,
-    pub chdir: Option<String>,
-    pub bin: Option<String>,
-    pub dir: Option<String>,
+    pub chdir: Option<PathBuf>,
+    pub bin: PathBuf,
     pub config: Option<String>,
     pub bin_arg: String,
 }
@@ -29,7 +28,6 @@ impl Display for Config {
         s.push_str(&format!("    show_console: {}\n", self.show_console));
         s.push_str(&format!("    chdir: {:?}\n", self.chdir));
         s.push_str(&format!("    bin: {:?}\n", self.bin));
-        s.push_str(&format!("    dir: {:?}\n", self.dir));
         s.push_str(&format!("    config: {:?}\n", self.config));
         s.push_str(&format!("    bin_arg: {:?}\n", self.bin_arg));
         s.push_str("}");
@@ -42,7 +40,7 @@ impl Config {
         let mut show_console = false;
         let mut chdir: Option<String> = None;
         let mut bin: Option<String> = None;
-        let mut dir: Option<String> = None;
+        let dir: Option<String> = None;
         let mut config: Option<String> = None;
         let mut bin_arg = "".to_string();
         // -- 表示后面的参数都是可执行文件的参数
@@ -68,7 +66,6 @@ impl Config {
         // --show 表示显示控制台
         // --chdir 表示切换工作目录
         // --chdir=xxx 表示切换工作目录到xxx
-        // --dir=xxx 表示工作目录是xxx
         // --bin=xxx 表示指定可执行文件
         // --config=xxx 表示指定配置文件
         // --help 输出上面这一堆东西
@@ -81,19 +78,23 @@ impl Config {
                 show_console = true;
             } else if args[i].starts_with("--chdir=") {
                 chdir = Some(args[i][8..].to_string());
-            } else if args[i].starts_with("--dir=") {
-                dir = Some(args[i][6..].to_string());
             } else if args[i].starts_with("--bin=") {
                 bin = Some(args[i][6..].to_string());
             } else if args[i].starts_with("--config=") {
                 config = Some(args[i][9..].to_string());
             }
         }
+        // 拼接上 dir
+        let bin = if let Some(dir) = dir {
+            PathBuf::from(dir).join(bin.unwrap_or("main".to_string()))
+        } else {
+            PathBuf::from(bin.unwrap_or("./lib/main".to_string()))
+        };
+        let chdir = chdir.map(|x| PathBuf::from(x));
         Some(Config {
             show_console,
             chdir,
             bin,
-            dir,
             config,
             bin_arg,
         })
