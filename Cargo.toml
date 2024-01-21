@@ -13,4 +13,4 @@ codegen-units = 1
 
 [target.'cfg(windows)'.dependencies.winapi]
 version = "0.3"
-features = ["winuser", "wincon", "processthreadsapi"]
+features = ["winuser", "wincon", "winbase", "consoleapi"]
