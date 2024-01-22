@@ -1,4 +1,4 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 #[cfg(windows)]
 mod win;
@@ -8,6 +8,7 @@ compile_error!("This program only support windows! (这个程序只支持windows
 mod config;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+pub const SHOW_CONSOLE: bool = false;
 
 fn main() {
     let config = config::Config::from_cli();

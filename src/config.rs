@@ -48,16 +48,20 @@ pub fn show_help() {
         Err(_) => {
             println!("{}", HELP_MESSAGE_ZH);
         }
-        
     }
+}
+
+pub fn get_default_config() -> (bool, Option<String>, String, String, String) {
+    let hard_default = (true, Some("lib".to_string()), "main".to_string(), "run.conf".to_string(), "".to_string());
+
+    hard_default
 }
 
 #[derive(Clone)]
 pub struct Config {
     pub show_console: bool,
-    pub chdir: Option<PathBuf>,
-    pub bin: PathBuf,
-    pub config: Option<PathBuf>,
+    pub chdir: Option<String>,
+    pub bin: String,
     pub bin_arg: Vec<String>,
 }
 
@@ -68,7 +72,6 @@ impl Display for Config {
         s.push_str(&format!("    show_console: {}\n", self.show_console));
         s.push_str(&format!("    chdir: {:?}\n", self.chdir));
         s.push_str(&format!("    bin: {:?}\n", self.bin));
-        s.push_str(&format!("    config: {:?}\n", self.config));
         s.push_str(&format!("    bin_arg: {:?}\n", self.bin_arg));
         s.push_str("}");
         write!(f, "{}", s)
@@ -78,37 +81,18 @@ impl Display for Config {
 impl Config {
     pub fn new(
         show_console: bool,
-        chdir: Option<PathBuf>,
-        bin: PathBuf,
-        config: Option<PathBuf>,
+        chdir: Option<String>,
+        bin: String,
         bin_arg: Vec<String>,
     ) -> Self {
         Config {
             show_console,
             chdir,
             bin,
-            config,
             bin_arg,
         }
     }
-    pub fn merge_from(&mut self, other: &Config) {
-        if other.show_console {
-            self.show_console = true;
-        }
-        if other.chdir.is_some() {
-            self.chdir = other.chdir.clone();
-        }
-        if other.bin != PathBuf::from("./lib/main") {
-            self.bin = other.bin.clone();
-        }
-        if other.config.is_some() {
-            self.config = other.config.clone();
-        }
-        if !other.bin_arg.is_empty() {
-            self.bin_arg = other.bin_arg.clone();
-        }
-    }
-    pub fn from_config(config_path: Option<PathBuf>) -> Option<Self> {
+    pub fn from_config(config_path: Option<PathBuf>) -> Option<(Option<bool>, Option<String>, Option<String>, Option<String>)> {
         if config_path.is_none() {
             // 判断一下 ./run.conf 是否存在
             let config_path = PathBuf::from("./run.conf");
@@ -156,22 +140,12 @@ impl Config {
                 }
             }
         }
-        // 处理一下 bin
-        let bin = if let Some(bin) = bin {
-            PathBuf::from(bin)
-        } else {
-            PathBuf::from("./lib/main")
-        };
-        let chdir = chdir.map(|x| PathBuf::from(x));
-        let arg = if let Some(arg) = arg {
-            vec![arg]
-        } else {
-            Vec::new()
-        };
-        Some(Self::new(show_console, chdir, bin, None, arg))
+        Some((Some(show_console), chdir, bin, arg))
+
     }
+
     pub fn from_cli() -> Option<Self> {
-        let mut show_console = false;
+        let mut show_console = None;
         let mut chdir: Option<String> = None;
         let mut bin: Option<String> = None;
         let mut config: Option<PathBuf> = None;
@@ -184,11 +158,11 @@ impl Config {
         }
 
         let index = args.iter().position(|x| x == "--");
-        let bin_arg: Vec<String>;
+        let bin_arg: Option<Vec<String>>;
         if index.is_some() {
-            bin_arg = args[index.unwrap() + 1..].to_vec();
+            bin_arg = Some(args[index.unwrap() + 1..].to_vec());
         } else {
-            bin_arg = Vec::new();
+            bin_arg = None;
         }
         // 先尝试获取指定的控制台参数
         // --hide 表示隐藏控制台
@@ -202,9 +176,9 @@ impl Config {
             if args[i] == "--" {
                 break;
             } else if args[i] == "--hide" {
-                show_console = false;
+                show_console = Some(false);
             } else if args[i] == "--show" {
-                show_console = true;
+                show_console = Some(true);
             } else if args[i].starts_with("--chdir=") {
                 chdir = Some(args[i][8..].to_string());
             } else if args[i].starts_with("--bin=") {
@@ -213,24 +187,27 @@ impl Config {
                 config = Some(PathBuf::from_str(&args[i][9..]).unwrap());
             }
         }
-        // 处理一下 bin
-        let bin = if let Some(bin) = bin {
-            PathBuf::from(bin)
+        let default_conf: (bool, Option<String>, String, String, String) = get_default_config();
+        let conf_from_config: Option<(Option<bool>, Option<String>, Option<String>, Option<String>)> = Self::from_config(config.clone());
+        // 优先顺序: cli > config > default
+        if let Some(conf) = conf_from_config {
+            Some(
+                Self::new(
+                    show_console.unwrap_or(conf.0.unwrap_or(default_conf.0)),
+                    chdir.or(conf.1.or(default_conf.1)),
+                    bin.unwrap_or(conf.2.unwrap_or(default_conf.2)),
+                    bin_arg.unwrap_or(vec![conf.3.unwrap_or(default_conf.3)]),
+                )
+            )
         } else {
-            PathBuf::from("./main")
-        };
-        // 默认为 chdir ./lib
-        let chdir = if let Some(chdir) = chdir {
-            Some(PathBuf::from(chdir))
-        } else {
-            Some(PathBuf::from("./lib"))
-        };
-
-        let mut conf = Self::new(show_console, chdir, bin, config, bin_arg);
-        let conf_from_config = Self::from_config(conf.config.clone());
-        if conf_from_config.is_some() {
-            conf.merge_from(&conf_from_config.unwrap());
+            Some(
+                Self::new(
+                    show_console.unwrap_or(default_conf.0),
+                    chdir.or(default_conf.1),
+                    bin.unwrap_or(default_conf.2),
+                    bin_arg.unwrap_or(vec![default_conf.3]),
+                )
+            )
         }
-        Some(conf)
     }
 }

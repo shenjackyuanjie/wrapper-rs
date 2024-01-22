@@ -10,28 +10,19 @@ fn is_launched_from_console() -> bool {
         }
         let mut console_process_id: u32 = 0;
         winuser::GetWindowThreadProcessId(console_window, &mut console_process_id);
-
         console_process_id != processthreadsapi::GetCurrentProcessId()
     }
 }
 
-fn free_console() {
+fn attach_console() {
     unsafe {
-        wincon::FreeConsole();
-    }
-}
-
-fn hide_window() {
-    unsafe {
-        let _hwnd = winuser::GetForegroundWindow();
-        winuser::ShowWindow(_hwnd, winuser::SW_HIDE);
-    }
-}
-
-fn show_window() {
-    unsafe {
-        let _hwnd = winuser::GetForegroundWindow();
-        winuser::ShowWindow(_hwnd, winuser::SW_SHOW);
+        let _out = wincon::AttachConsole(wincon::ATTACH_PARENT_PROCESS);
+        if _out == 0 {
+            // GetLastError!
+            use std::io::Error;
+            let e = Error::last_os_error();
+            println!("AttachConsole failed: {}", e);
+        }
     }
 }
 
@@ -66,21 +57,22 @@ pub fn call_bin(config: &Config, started_from_console: bool) {
             .creation_flags(0x08000000_u32)
             .spawn()
             .expect("执行失败");
-        free_console();
-        hide_window();
         child.wait().expect("等待失败");
     }
     // 重新显示终端 (以防万一)
-    show_window();
 }
 
 pub fn run(config: &Config) {
+    attach_console();
+    println!("call {}", crate::VERSION);
+    println!("config: {}", config);
     // 先切换工作目录
     if let Some(chdir) = config.chdir.as_ref() {
         std::env::set_current_dir(chdir).unwrap();
     }
     // 检测一下是否是从控制台启动的
     let started_from_console = is_launched_from_console();
+    println!("started_from_console: {}", started_from_console);
     // 调用可执行文件
     call_bin(&config, started_from_console);
 }
