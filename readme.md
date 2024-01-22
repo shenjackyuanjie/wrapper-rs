@@ -1,6 +1,43 @@
 # wrapper-rs
 
-这是一个用 rust 写的, 最开始用于让 Nuitka 打包出来的东西也可以像 pyinstaller 一样能文件夹结构干净一些的小东西, 目前的计划是写成一个跨平台的玩意, 不过我先写完 Windows 版本再说
+这是一个用 rust 写的, 用于让 Nuitka 打包出来的东西也可以像 pyinstaller 一样能文件夹结构干净一些的小东西
+
+## 使用说明
+
+把你的 Nuitka 打包出来的东西 (`xxx.dist`) 改个名字, 叫作 `lib`
+
+把你的主程序改个名字, 叫作 `main.exe`
+
+整理一下文件夹结构
+
+```text
+call.exe
+lib/
+    main.exe
+    你的其他所有东西
+```
+
+让你的用户直接使用 call.exe 即可
+
+## 详细一些的用法说明
+
+> run.conf
+
+```ini
+# 这是一个范例
+
+# 除了 true 都会被认为是 false
+show_console = true
+
+# 就是 chdir (默认 ./lib)
+chdir = ../lib
+
+# 运行的可执行文件名称 (默认 ./main)
+bin = ./main
+
+# 运行的参数 (默认 "")
+arg = aaa
+```
 
 ```text
 call [选项] [--] [参数]
