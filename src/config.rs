@@ -1,6 +1,5 @@
 use std::fmt::Display;
 use std::path::PathBuf;
-use std::str::FromStr;
 
 pub const HELP_MESSAGE_EN: &str = r#"call [options] [--] [arguments]
 Options:
@@ -52,7 +51,13 @@ pub fn show_help() {
 }
 
 pub fn get_default_config() -> (bool, Option<String>, String, String, String) {
-    let hard_default = (true, Some("lib".to_string()), "main".to_string(), "run.conf".to_string(), "".to_string());
+    let hard_default = (
+        true,
+        Some("lib".to_string()),
+        "./main".to_string(),
+        "run.conf".to_string(),
+        "".to_string(),
+    );
 
     hard_default
 }
@@ -92,7 +97,9 @@ impl Config {
             bin_arg,
         }
     }
-    pub fn from_config(config_path: Option<PathBuf>) -> Option<(Option<bool>, Option<String>, Option<String>, Option<String>)> {
+    pub fn from_config(
+        config_path: Option<PathBuf>,
+    ) -> Option<(Option<bool>, Option<String>, Option<String>, Option<String>)> {
         if config_path.is_none() {
             // 判断一下 ./run.conf 是否存在
             let config_path = PathBuf::from("./run.conf");
@@ -141,14 +148,13 @@ impl Config {
             }
         }
         Some((Some(show_console), chdir, bin, arg))
-
     }
 
     pub fn from_cli() -> Option<Self> {
         let mut show_console = None;
         let mut chdir: Option<String> = None;
         let mut bin: Option<String> = None;
-        let mut config: Option<PathBuf> = None;
+        let mut config: Option<String> = None;
         // -- 表示后面的参数都是可执行文件的参数
         let args: Vec<String> = std::env::args().collect();
         // 先检查有没有 --help
@@ -184,30 +190,30 @@ impl Config {
             } else if args[i].starts_with("--bin=") {
                 bin = Some(args[i][6..].to_string());
             } else if args[i].starts_with("--config=") {
-                config = Some(PathBuf::from_str(&args[i][9..]).unwrap());
+                config = Some(args[i][9..].to_string());
             }
         }
         let default_conf: (bool, Option<String>, String, String, String) = get_default_config();
-        let conf_from_config: Option<(Option<bool>, Option<String>, Option<String>, Option<String>)> = Self::from_config(config.clone());
+        let conf_from_config = Self::from_config(
+            config
+                .or(Some(default_conf.3.clone()))
+                .map(|x| PathBuf::from(x)),
+        );
         // 优先顺序: cli > config > default
         if let Some(conf) = conf_from_config {
-            Some(
-                Self::new(
-                    show_console.unwrap_or(conf.0.unwrap_or(default_conf.0)),
-                    chdir.or(conf.1.or(default_conf.1)),
-                    bin.unwrap_or(conf.2.unwrap_or(default_conf.2)),
-                    bin_arg.unwrap_or(vec![conf.3.unwrap_or(default_conf.3)]),
-                )
-            )
+            Some(Self::new(
+                show_console.unwrap_or(conf.0.unwrap_or(default_conf.0)),
+                chdir.or(conf.1.or(default_conf.1)),
+                bin.unwrap_or(conf.2.unwrap_or(default_conf.2)),
+                bin_arg.unwrap_or(vec![conf.3.unwrap_or(default_conf.3)]),
+            ))
         } else {
-            Some(
-                Self::new(
-                    show_console.unwrap_or(default_conf.0),
-                    chdir.or(default_conf.1),
-                    bin.unwrap_or(default_conf.2),
-                    bin_arg.unwrap_or(vec![default_conf.3]),
-                )
-            )
+            Some(Self::new(
+                show_console.unwrap_or(default_conf.0),
+                chdir.or(default_conf.1),
+                bin.unwrap_or(default_conf.2),
+                bin_arg.unwrap_or(vec![default_conf.3]),
+            ))
         }
     }
 }
