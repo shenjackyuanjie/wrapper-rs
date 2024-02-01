@@ -17,6 +17,6 @@ codegen-units = 1
 version = "0.3"
 features = ["winuser", "wincon", "processthreadsapi"]
 
-[build-dependencies]
+[target.'cfg(windows)'.build-dependencies]
 winres = "0.1.0"
 winapi = { version = "0.3", features = ["winnt"] }
