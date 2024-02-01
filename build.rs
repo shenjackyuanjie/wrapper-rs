@@ -1,5 +1,6 @@
 fn main() {
-    if cfg!(windows) {
+    #[cfg(windows)]
+    {
         let mut res = winres::WindowsResource::new();
         // res.set_icon("icon.ico");
         // res.set_manifest(&manifest);
