@@ -1,10 +1,10 @@
 #![windows_subsystem = "windows"]
 
-// #[cfg(not(windows))]
 #[allow(unused)]
+#[cfg(not(windows))]
 mod other;
-#[cfg(windows)]
 #[allow(unused)]
+#[cfg(windows)]
 mod win;
 
 mod config;
