@@ -1,9 +1,9 @@
 #![windows_subsystem = "windows"]
 
+// #[cfg(not(windows))]
+mod other;
 #[cfg(windows)]
 mod win;
-#[cfg(not(windows))]
-compile_error!("This program only support windows! (这个程序只支持windows!) (截止 20240121 为止)");
 
 mod config;
 
@@ -22,4 +22,6 @@ fn main() {
     // 运行
     #[cfg(windows)]
     win::run(&config);
+    #[cfg(not(windows))]
+    other::run(&config);
 }

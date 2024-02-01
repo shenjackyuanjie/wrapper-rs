@@ -2,6 +2,8 @@
 
 这是一个用 rust 写的, 用于让 Nuitka 打包出来的东西也可以像 pyinstaller 一样能文件夹结构干净一些的小东西
 
+现在也支持 非 Windows 啦 (虽说没测试过)
+
 ## 使用说明
 
 把你的 Nuitka 打包出来的东西 (`xxx.dist`) 改个名字, 叫作 `lib`

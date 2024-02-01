@@ -37,21 +37,27 @@ pub fn run(config: &Config) {
     }
     // 如果从终端启动, 且没指定显示终端, 则隐藏 stdout
     if started_from_console {
+        let child;
         if config.show_console {
             println!("show_window with stdout");
-            let exit_status = Command::new(&config.bin)
+            child = Command::new(&config.bin)
                 .args(&config.bin_arg)
-                .status()
-                .expect("执行失败");
-            if !exit_status.success() {
-                println!("Exit with error code: {}", exit_status.code().unwrap());
-            }
+                .spawn()
+                .expect("启动失败");
         } else {
             println!("show_window without stdout");
-            let _out = Command::new(&config.bin)
+            // 让子程序接管 stdout
+            child = Command::new(&config.bin)
                 .args(&config.bin_arg)
-                .output()
+                .spawn()
                 .expect("执行失败");
+        }
+        let exit_status = child.wait_with_output().expect("等待失败");
+        if !exit_status.status.success() {
+            println!(
+                "Exit with error code: {}",
+                exit_status.status.code().unwrap()
+            );
         }
     } else {
         println!("hide_window");
