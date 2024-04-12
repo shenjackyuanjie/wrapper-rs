@@ -20,5 +20,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Build
       run: cargo build --verbose
+    
+    - name: 获取版本号
+      id: get_version
+      uses: sravinet/toml-select@v1.0.1
+      with:
+        file: ./Cargo.toml
+        field: "package.version"
+    
+    - name: 上传
+      uses: actions/upload-artifact@v2
+      with:
+        name: wrapper-rs-b${{ github.run_number }}-${{ steps.get_version.outputs.value }}
+        path: ./target/release/call*

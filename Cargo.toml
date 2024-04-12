@@ -1,6 +1,6 @@
 [package]
 name = "call"
-version = "1.3.0"
+version = "1.4.0"
 description = "一个简单的用于不带控制台/带控制台调用其他程序的包装器"
 edition = "2021"
 build = "build.rs"

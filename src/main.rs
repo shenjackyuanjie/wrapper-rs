@@ -7,6 +7,7 @@ mod other;
 #[cfg(windows)]
 mod win;
 
+mod reader;
 mod config;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
