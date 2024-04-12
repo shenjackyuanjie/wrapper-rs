@@ -1,6 +1,8 @@
 use std::fmt::Display;
 use std::path::PathBuf;
 
+use toml::{from_str, Value as TomlValue};
+
 pub const HELP_MESSAGE_EN: &str = r#"call [options] [--] [arguments]
 Options:
     --hide      Hide console window (default)
@@ -63,6 +65,83 @@ pub fn get_default_config() -> (bool, Option<String>, String, String, String) {
 }
 
 #[derive(Clone)]
+pub struct RawConfig {
+    pub show_console: Option<bool>,
+    pub chdir: Option<String>,
+    pub bin: Option<String>,
+    pub bin_arg: Option<String>,
+}
+
+impl Display for RawConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "RawConfig {{ show_console: {:?}, chdir: {:?}, bin: {:?}, bin_arg: {:?} }}",
+            self.show_console, self.chdir, self.bin, self.bin_arg
+        ))
+    }
+}
+
+impl RawConfig {
+    pub fn from_cli() -> Self {
+        let mut show_console = None;
+        let mut chdir = None;
+        let mut bin = None;
+        let mut bin_arg = None;
+        let args: Vec<String> = std::env::args().collect();
+        let index = args.iter().position(|x| x == "--");
+        if index.is_some() {
+            bin_arg = Some(args[index.unwrap() + 1..].join(" "));
+        }
+        for i in 1..args.len() {
+            if args[i] == "--" {
+                break;
+            } else if args[i] == "--hide" {
+                show_console = Some(false);
+            } else if args[i] == "--show" {
+                show_console = Some(true);
+            } else if args[i].starts_with("--chdir=") {
+                chdir = Some(args[i][8..].to_string());
+            } else if args[i].starts_with("--bin=") {
+                bin = Some(args[i][6..].to_string());
+            }
+        }
+        RawConfig {
+            show_console,
+            chdir,
+            bin,
+            bin_arg,
+        }
+    }
+
+    pub fn from_config(config_path: Option<PathBuf>) -> Option<Self> {
+        if config_path.is_none() {
+            let config_path = PathBuf::from("./run.conf");
+            if config_path.exists() {
+                return Self::from_config(Some(config_path));
+            }
+            return None;
+        }
+        let config_path = config_path.unwrap();
+        if !config_path.exists() {
+            return None;
+        }
+        let config_str = std::fs::read_to_string(config_path).ok()?;
+        let config_value: TomlValue = from_str(&config_str).ok()?;
+        let show_console = config_value.get("show_console").and_then(|x| x.as_bool());
+        let chdir = config_value.get("chdir").and_then(|x| x.as_str()).map(|x| x.to_string());
+        let bin = config_value.get("bin").and_then(|x| x.as_str()).map(|x| x.to_string());
+        let bin_arg = config_value.get("bin_arg").and_then(|x| x.as_str()).map(|x| x.to_string());
+
+        Some(RawConfig {
+            show_console,
+            chdir,
+            bin,
+            bin_arg,
+        })
+    }
+}
+
+#[derive(Clone)]
 pub struct Config {
     pub show_console: bool,
     pub chdir: Option<String>,
@@ -113,41 +192,13 @@ impl Config {
             return None;
         }
         let config_str = std::fs::read_to_string(config_path).unwrap();
-        let mut show_console = false;
-        let mut chdir: Option<String> = None;
-        let mut bin: Option<String> = None;
-        let mut arg: Option<String> = None;
-        for line in config_str.lines() {
-            if line.starts_with("#") {
-                continue;
-            }
-            let mut iter = line.splitn(2, "=");
-            let key = iter.next().unwrap_or("").trim();
-            let value = iter.next().unwrap_or("").trim();
-            match key {
-                "show_console" => {
-                    show_console = value == "true";
-                }
-                "chdir" => {
-                    chdir = Some(value.to_string());
-                }
-                "bin" => {
-                    bin = Some(value.to_string());
-                }
-                "arg" => {
-                    arg = Some(value.to_string());
-                }
-                "" => continue,
-                _ => {
-                    // 警告一下
-                    println!("Warning: unknown config key: {}", key);
-                    if !value.is_empty() {
-                        print!("value: {}", value)
-                    }
-                }
-            }
-        }
-        Some((Some(show_console), chdir, bin, arg))
+        let config_value: TomlValue = from_str(&config_str).unwrap();
+        let show_console = config_value.get("show_console").and_then(|x| x.as_bool());
+        let chdir = config_value.get("chdir").and_then(|x| x.as_str()).map(|x| x.to_string());
+        let bin = config_value.get("bin").and_then(|x| x.as_str()).map(|x| x.to_string());
+        let arg = config_value.get("bin_arg").and_then(|x| x.as_str()).map(|x| x.to_string());
+
+        Some((show_console, chdir, bin, arg))
     }
 
     pub fn from_cli() -> Option<Self> {

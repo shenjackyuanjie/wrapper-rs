@@ -6,3 +6,11 @@
 //! 大概就这样
 //! 
 
+pub fn merge_self_conf() {
+    
+}
+
+pub fn read_self() -> Option<Vec<u8>> {
+    let path = std::env::current_exe().ok()?;
+    std::fs::read(&path).ok()
+}
