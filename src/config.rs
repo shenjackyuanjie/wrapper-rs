@@ -61,7 +61,7 @@ pub const HELP_MESSAGE_ZH: &str = r#"call [选项] [--] [参数]
 pub fn show_help() {
     #[cfg(windows)]
     crate::win::attach_console();
-    println!("version: {}", crate::VERSION);
+    println!("call: {}", crate::VERSION);
     match std::env::var("LANG") {
         Ok(lang) => {
             println!("{}", lang);
@@ -223,10 +223,6 @@ impl RawConfig {
         };
     }
 
-    pub fn from_executeable() -> Option<Self> {
-        crate::reader::read_self()
-    }
-
     pub fn from_config(config_path: Option<PathBuf>) -> Option<Self> {
         if config_path.is_none() {
             let config_path = PathBuf::from("./run.conf");
@@ -332,7 +328,7 @@ impl Config {
 
     pub fn from_cli() -> Self {
         let cli_conf = RawConfig::from_cli();
-        let execueable_conf = RawConfig::from_executeable();
+        let execueable_conf = crate::reader::read_self();
 
         todo!("from_cli")
     }
