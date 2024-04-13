@@ -29,7 +29,7 @@ pub fn read_self() -> Option<crate::config::RawConfig> {
         );
         return None;
     }
-    let (data, data_len) = data.split_at(4);
+    let (data, data_len) = data.split_at(data.len() - 4);
     let data_len = u32::from_le_bytes(data_len.try_into().unwrap()) as usize;
     // 校验长度
     // 长度不应大于 data.len()

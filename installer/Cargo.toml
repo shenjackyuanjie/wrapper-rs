@@ -1,0 +1,10 @@
+[package]
+name = "installer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { version = "1.0.82", features = ["backtrace"] }
+blake3 = "1.5.1"
+clap = { version = "4.5.4", features = ["derive"] }
+toml = "0.8.12"
