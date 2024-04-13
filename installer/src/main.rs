@@ -1,15 +1,15 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use blake3::Hasher;
 
 #[derive(Clone, Parser, Debug)]
 #[command(version, about)]
 pub struct CliArg {
     #[arg(long, short = 't')]
-    pub target_bin: String,
+    pub target: String,
     #[arg(long, short = 'c')]
     pub check: bool,
+    
 }
-
 #[derive(Clone)]
 pub struct RawConfig {
     pub show_console: Option<bool>,
@@ -22,7 +22,7 @@ pub struct RawConfig {
 
 
 fn check_only(config: CliArg) -> anyhow::Result<()> {
-    let target = config.target_bin;
+    let target = config.target;
     
     // 读取 target
     let target_bin = std::fs::read(target)?;
