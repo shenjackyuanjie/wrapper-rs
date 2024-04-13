@@ -3,6 +3,7 @@ use std::{os::windows::process::CommandExt, process::Command};
 use winapi::um::{processthreadsapi, wincon, winuser};
 
 pub static mut FROM_CONSOLE: bool = false;
+pub static mut ATTACHED_CONSOLE: bool = false;
 
 fn is_launched_from_console() -> bool {
     unsafe {
@@ -18,12 +19,17 @@ fn is_launched_from_console() -> bool {
 
 pub fn attach_console() {
     unsafe {
+        if ATTACHED_CONSOLE {
+            return;
+        }
         let _out = wincon::AttachConsole(wincon::ATTACH_PARENT_PROCESS);
         if _out == 0 {
             // GetLastError!
             use std::io::Error;
             let e = Error::last_os_error();
             println!("AttachConsole failed: {}", e);
+        } else {
+            println!("AttachConsole success");
         }
     }
 }

@@ -3,12 +3,15 @@
 #[allow(unused)]
 // #[cfg(not(windows))]
 mod other;
+
 #[allow(unused)]
 #[cfg(windows)]
 mod win;
 
 mod config;
 mod reader;
+
+pub static mut VERBOSE: bool = false;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 pub const SHOW_CONSOLE: bool = false;
