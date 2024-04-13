@@ -2,6 +2,8 @@ use crate::config::Config;
 use std::{os::windows::process::CommandExt, process::Command};
 use winapi::um::{processthreadsapi, wincon, winuser};
 
+pub static mut FROM_CONSOLE: bool = false;
+
 fn is_launched_from_console() -> bool {
     unsafe {
         let console_window = wincon::GetConsoleWindow();
@@ -14,7 +16,7 @@ fn is_launched_from_console() -> bool {
     }
 }
 
-fn attach_console() {
+pub fn attach_console() {
     unsafe {
         let _out = wincon::AttachConsole(wincon::ATTACH_PARENT_PROCESS);
         if _out == 0 {
@@ -26,17 +28,25 @@ fn attach_console() {
     }
 }
 
+pub fn init() {
+    unsafe {
+        FROM_CONSOLE = is_launched_from_console();
+    }
+}
+
+
 pub fn run(config: &Config) {
     attach_console();
-    let started_from_console = is_launched_from_console();
-    println!("call {}", crate::VERSION);
-    println!("config: {}", config);
+    if config.verbose {
+        println!("call {}", crate::VERSION);
+        println!("config: {}", config);
+    }
     // 先切换工作目录
     if let Some(chdir) = config.chdir.as_ref() {
         std::env::set_current_dir(chdir).unwrap();
     }
     // 如果从终端启动, 且没指定显示终端, 则隐藏 stdout
-    if started_from_console {
+    if unsafe { FROM_CONSOLE } {
         let child;
         if config.show_console {
             println!("show_window with stdout");
