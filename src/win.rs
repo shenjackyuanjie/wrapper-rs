@@ -43,7 +43,12 @@ pub fn run(config: &Config) {
     }
     // 先切换工作目录
     if let Some(chdir) = config.chdir.as_ref() {
-        std::env::set_current_dir(chdir).unwrap();
+        match std::env::set_current_dir(chdir) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("切换目录失败: {}", e);
+            }
+        }
     }
     // 如果从终端启动, 且没指定显示终端, 则隐藏 stdout
     if unsafe { FROM_CONSOLE } {

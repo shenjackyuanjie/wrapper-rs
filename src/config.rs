@@ -124,24 +124,6 @@ impl Default for RawConfig {
 /// executable 的 builtin 配置 (附带在二进制文件中) (可修改)
 /// 最基本的默认配置
 impl RawConfig {
-    pub fn new(
-        show_console: Option<bool>,
-        verbose: Option<bool>,
-        chdir: Option<String>,
-        bin: Option<String>,
-        bin_arg: Option<String>,
-        config: Option<String>,
-    ) -> Self {
-        RawConfig {
-            show_console,
-            verbose,
-            chdir,
-            bin,
-            bin_arg,
-            config,
-        }
-    }
-
     /// 从命令行参数中获取配置
     /// 包括命令行参数中指定的配置文件
     pub fn from_cli() -> Self {
@@ -164,8 +146,12 @@ impl RawConfig {
             } else if args[i] == "-h" {
                 show_console = Some(false);
             } else if args[i] == "--verbose" {
+                #[cfg(windows)]
+                crate::win::attach_console();
                 verbose = Some(true);
             } else if args[i] == "-v" {
+                #[cfg(windows)]
+                crate::win::attach_console();
                 verbose = Some(true);
             } else if args[i] == "--help" {
                 show_help();
@@ -309,6 +295,22 @@ impl Display for Config {
     }
 }
 
+impl From<RawConfig> for Config {
+    fn from(raw: RawConfig) -> Self {
+        Config::new(
+            raw.show_console.unwrap(),
+            raw.verbose.unwrap(),
+            raw.chdir,
+            raw.bin.unwrap(),
+            raw.bin_arg
+                .unwrap()
+                .split(' ')
+                .map(|x| x.to_string())
+                .collect(),
+        )
+    }
+}
+
 impl Config {
     pub fn new(
         show_console: bool,
@@ -327,9 +329,20 @@ impl Config {
     }
 
     pub fn from_cli() -> Self {
-        let cli_conf = RawConfig::from_cli();
-        let execueable_conf = crate::reader::read_self();
+        let mut cli_conf = RawConfig::from_cli();
+        cli_conf.update_from_config();
+        // 从配置文件中更新
 
-        todo!("from_cli")
+        let execueable_conf = crate::reader::read_self();
+        let default_conf = RawConfig::default();
+
+        if execueable_conf.is_some() {
+            cli_conf
+                .merge_config(execueable_conf.unwrap())
+                .merge_config(default_conf)
+                .into()
+        } else {
+            cli_conf.merge_config(default_conf).into()
+        }
     }
 }
