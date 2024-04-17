@@ -58,6 +58,18 @@ pub const HELP_MESSAGE_ZH: &str = r#"call [选项] [--] [参数]
     运行 ./main
 "#;
 
+pub static mut VERBOSE: bool = false;
+
+pub fn set_verbose(verbose: bool) {
+    unsafe {
+        VERBOSE = verbose;
+    }
+}
+
+pub fn get_verbose() -> bool {
+    unsafe { VERBOSE }
+}
+
 pub fn show_help() {
     #[cfg(windows)]
     crate::win::attach_console();
@@ -138,21 +150,21 @@ impl RawConfig {
         if index.is_some() {
             bin_arg = Some(args[index.unwrap() + 1..].join(" "));
         }
+        let verbose_flags = vec!["--verbose", "-v"];
+        let show_console_flags = vec!["--show", "-s"];
+        let hide_flags = vec!["--hide", "-h"];
+
         for i in 1..args.len() {
             if args[i] == "--" {
                 break;
-            } else if args[i] == "--hide" {
-                show_console = Some(false);
-            } else if args[i] == "-h" {
-                show_console = Some(false);
-            } else if args[i] == "--verbose" {
-                #[cfg(windows)]
-                crate::win::attach_console();
+            } else if verbose_flags.contains(&args[i].as_str()) {
                 verbose = Some(true);
-            } else if args[i] == "-v" {
-                #[cfg(windows)]
-                crate::win::attach_console();
-                verbose = Some(true);
+                set_verbose(true);
+                show_console = Some(true);
+            } else if show_console_flags.contains(&args[i].as_str()) {
+                show_console = Some(true);
+            } else if hide_flags.contains(&args[i].as_str()) {
+                show_console = Some(false);
             } else if args[i] == "--help" {
                 show_help();
                 std::process::exit(0);
@@ -173,6 +185,10 @@ impl RawConfig {
             } else if args[i].starts_with("--config=") {
                 config = Some(args[i][9..].to_string());
             }
+        }
+        if Some(true) == show_console {
+            #[cfg(windows)]
+            crate::win::attach_console();
         }
         RawConfig {
             show_console,
@@ -253,8 +269,12 @@ impl RawConfig {
     }
 
     pub fn merge_config(mut self, other: RawConfig) -> Self {
+        // 合并配置
         if self.show_console.is_none() {
             self.show_console = other.show_console;
+        }
+        if self.verbose.is_none() {
+            self.verbose = other.verbose;
         }
         if self.chdir.is_none() {
             self.chdir = other.chdir;

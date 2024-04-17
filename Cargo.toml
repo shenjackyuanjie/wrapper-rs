@@ -10,16 +10,21 @@ build = "build.rs"
 [profile.release]
 # 最小体积优化
 opt-level = 'z'
+strip = 'symbols'
 lto = true
 codegen-units = 1
 
-[target.'cfg(windows)'.dependencies.winapi]
-version = "0.3"
-features = ["winuser", "wincon", "processthreadsapi"]
+[target.'cfg(windows)'.dependencies.windows-sys]
+version = "0.52"
+features = [
+    "Win32_System_Console",
+    "Win32_System_Threading",
+    "Win32_Foundation",
+]
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.0"
-winapi = { version = "0.3", features = ["winnt"] }
+windows-sys = { version = "0.52", features = ["Win32_System_SystemServices"] }
 
 [dependencies]
 blake3 = "1.5.1"

@@ -9,7 +9,6 @@
 use blake3::Hasher;
 use toml::{from_str, Value as TomlValue};
 
-
 pub fn read_self() -> Option<crate::config::RawConfig> {
     // 先校验最后部分是否为合法的校验码
     let mut verify = Hasher::new();
@@ -22,11 +21,11 @@ pub fn read_self() -> Option<crate::config::RawConfig> {
 
     let verify_data = verify.finalize();
     if verify_data.as_bytes() != verify_bytes {
-        println!(
-            "校验码不匹配 {:?} {:?}",
+        crate::debug_println(&format!(
+            "校验码不匹配 {:?}\n{:?}",
             verify_data.as_bytes(),
             verify_bytes
-        );
+        ));
         return None;
     }
     let (data, data_len) = data.split_at(data.len() - 4);
@@ -34,7 +33,7 @@ pub fn read_self() -> Option<crate::config::RawConfig> {
     // 校验长度
     // 长度不应大于 data.len()
     if data_len > data.len() {
-        println!("长度不匹配 {} {}", data_len, data.len());
+        crate::debug_println(&format!("长度不匹配 {} {}", data_len, data.len()));
         return None;
     }
     let (_, data) = data.split_at(data_len);
@@ -47,12 +46,18 @@ pub fn read_self() -> Option<crate::config::RawConfig> {
         .get("chdir")
         .and_then(|x| x.as_str())
         .map(|x| x.to_string());
-    let bin = config_value.get("bin").and_then(|x| x.as_str()).map(|x| x.to_string());
+    let bin = config_value
+        .get("bin")
+        .and_then(|x| x.as_str())
+        .map(|x| x.to_string());
     let bin_arg = config_value
         .get("bin_arg")
         .and_then(|x| x.as_str())
         .map(|x| x.to_string());
-    let config = config_value.get("config").and_then(|x| x.as_str()).map(|x| x.to_string());
+    let config = config_value
+        .get("config")
+        .and_then(|x| x.as_str())
+        .map(|x| x.to_string());
 
     Some(crate::config::RawConfig {
         show_console,

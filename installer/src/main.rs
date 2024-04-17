@@ -1,5 +1,5 @@
-use clap::{Parser, Subcommand};
 use blake3::Hasher;
+use clap::{Parser, Subcommand};
 
 #[derive(Clone, Parser, Debug)]
 #[command(version, about)]
@@ -8,7 +8,6 @@ pub struct CliArg {
     pub target: String,
     #[arg(long, short = 'c')]
     pub check: bool,
-    
 }
 #[derive(Clone)]
 pub struct RawConfig {
@@ -20,14 +19,13 @@ pub struct RawConfig {
     pub config: Option<String>,
 }
 
-
 fn check_only(config: CliArg) -> anyhow::Result<()> {
     let target = config.target;
-    
+
     // 读取 target
     let target_bin = std::fs::read(target)?;
 
-    // 读取最后 32 bit 作为校验码 
+    // 读取最后 32 bit 作为校验码
     let (data, verify_data) = target_bin.split_at(target_bin.len() - 32);
 
     let mut hasher = Hasher::new();
@@ -35,7 +33,11 @@ fn check_only(config: CliArg) -> anyhow::Result<()> {
 
     let hash = hasher.finalize();
     if hash.as_bytes() != verify_data {
-        anyhow::bail!("校验码不匹配\n预期:{:?}\n实际:{:?}", hash.as_bytes(), verify_data);
+        anyhow::bail!(
+            "校验码不匹配\n预期:{:?}\n实际:{:?}",
+            hash.as_bytes(),
+            verify_data
+        );
     }
 
     let (data, data_len) = data.split_at(data.len() - 4);
@@ -55,14 +57,12 @@ fn check_only(config: CliArg) -> anyhow::Result<()> {
     Ok(())
 }
 
-
 fn main() -> anyhow::Result<()> {
     let args = CliArg::parse();
-    
+
     if args.check {
         check_only(args)
     } else {
         todo!()
     }
-
 }
